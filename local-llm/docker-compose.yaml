@@ -6,6 +6,8 @@ services:
       - "11434:11434"
     volumes:
       - ollama:/root/.ollama
+    environment:
+      - OLLAMA_KEEP_ALIVE=-1
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "ollama", "list"]
@@ -20,6 +22,19 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+
+  ollama-init:
+    image: ollama/ollama:0.30.10
+    container_name: ollama-init
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - "ollama run hf.co/yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q3_K_M"
+    restart: "no"
 
   open-webui:
     image: ghcr.io/open-webui/open-webui:v0.9.6
