@@ -7,8 +7,9 @@ service stack managed with Docker Compose.
 
 | Stack                      | Description                                          |
 |----------------------------|------------------------------------------------------|
-| [local-llm](./local-llm/) | Ollama + Open WebUI — self-hosted LLM inference       |
-| [grafana](./grafana/)     | Grafana + Tailscale sidecar — tailnet-only dashboards |
+| [local-llm](./local-llm/)           | Ollama + Open WebUI — self-hosted LLM inference                 |
+| [grafana](./grafana/)               | Grafana + Tailscale sidecar — tailnet-only dashboards           |
+| [home-assistant](./home-assistant/) | Home Assistant + Tailscale sidecar — tailnet-only home automation |
 
 ## Prerequisites
 
@@ -25,6 +26,12 @@ service stack managed with Docker Compose.
 │   └── README.md
 ├── grafana/            # Grafana behind a Tailscale sidecar
 │   ├── .env.example
+│   ├── docker-compose.yaml
+│   ├── serve.json
+│   └── README.md
+├── home-assistant/     # Home Assistant behind a Tailscale sidecar
+│   ├── .env.example
+│   ├── config/         # Bind-mounted HA config (seed configuration.yaml tracked)
 │   ├── docker-compose.yaml
 │   ├── serve.json
 │   └── README.md
