@@ -1,0 +1,11 @@
+# Loads default set of integrations. Do not remove.
+default_config:
+
+# Home Assistant runs behind the Tailscale Serve reverse proxy, which shares this
+# container's network namespace and forwards requests from the loopback address.
+# Without this block HA rejects proxied requests with "400: Bad Request".
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 127.0.0.1
+    - ::1

@@ -1,0 +1,5 @@
+# Ignore everything Home Assistant generates at runtime...
+*
+# ...but keep the seed config and this ignore file.
+!.gitignore
+!configuration.yaml
