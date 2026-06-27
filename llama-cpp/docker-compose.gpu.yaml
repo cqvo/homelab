@@ -1,0 +1,12 @@
+# GPU override for NVIDIA hosts (e.g. Windows + Docker Desktop/WSL2).
+# Merge it via COMPOSE_FILE in .env (see .env.example). Also set
+# LLAMA_IMAGE_TAG=server-cuda and LLAMA_N_GPU_LAYERS=99 to actually use the GPU.
+services:
+  llama-server:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
