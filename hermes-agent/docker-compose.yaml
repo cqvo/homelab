@@ -1,0 +1,40 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.98.4
+    container_name: hermes-tailscale
+    hostname: hermes
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+      - TS_EXTRA_ARGS=--reset
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./serve.json:/config/serve.json:ro
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "tailscale", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  hermes-agent:
+    image: nousresearch/hermes-agent
+    container_name: hermes
+    network_mode: service:tailscale
+    # Access is via the tailnet on :443, proxied to 127.0.0.1:8642 (see serve.json).
+    ports:
+      - "8642:8642"
+    volumes:
+      - hermes-state:/opt/data
+    depends_on:
+      tailscale:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  hermes-state:
+  tailscale-state:
