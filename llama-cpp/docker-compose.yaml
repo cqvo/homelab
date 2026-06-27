@@ -29,6 +29,7 @@ services:
     environment:
       - MODEL_NAME=${MODEL_NAME:-}
       - HF_TOKEN=${HF_TOKEN:-}          # only needed for gated/private repos
+      - LLAMA_CACHE=/models            # persist --hf-repo downloads to the volume
     entrypoint: ["/bin/sh", "-c"]
     command:
       - 'exec /app/llama-server --host 0.0.0.0 --port 8080 $${MODEL_NAME:+--hf-repo "$${MODEL_NAME}"}'
@@ -38,6 +39,12 @@ services:
       tailscale:
         condition: service_healthy
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 1800s   # 30m: covers ~7GB download + 12B load on this host
 
 volumes:
   llama-cpp:
