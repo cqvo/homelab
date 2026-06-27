@@ -1,0 +1,44 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.98.4
+    container_name: llama-server-tailscale
+    hostname: llama-server
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+      - TS_EXTRA_ARGS=--reset
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./serve.json:/config/serve.json:ro
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "tailscale", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  llama-server:
+    image: ghcr.io/ggml-org/llama.cpp:server
+    container_name: llama-server
+    network_mode: service:tailscale
+    # Access is via the tailnet on :443, proxied to 127.0.0.1:8080 (see serve.json).
+    environment:
+      - MODEL_NAME=${MODEL_NAME:-}
+      - HF_TOKEN=${HF_TOKEN:-}          # only needed for gated/private repos
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'exec /app/llama-server --host 0.0.0.0 --port 8080 $${MODEL_NAME:+--hf-repo "$${MODEL_NAME}"}'
+    volumes:
+      - llama-cpp:/models
+    depends_on:
+      tailscale:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  llama-cpp:
+  tailscale-state:
