@@ -39,13 +39,9 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
       - TELEGRAM_HOME_CHANNEL=${TELEGRAM_HOME_CHANNEL}
-      # Consumed by config.yaml via ${VAR} interpolation (custom ollama model backend).
-      - MODEL_NAME=${MODEL_NAME}
-      - MODEL_ENDPOINT=${MODEL_ENDPOINT}
-      - BACKUP_MODEL_NAME=${BACKUP_MODEL_NAME}
-      - BACKUP_MODEL_ENDPOINT=${BACKUP_MODEL_ENDPOINT}
+      # Model name/endpoints are hardcoded in config.yaml (Hermes doesn't expand ${VAR}).
+      # Only the OpenRouter key is needed at runtime; Hermes reads it natively.
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - OPENROUTER_MODEL_NAME=${OPENROUTER_MODEL_NAME}
     volumes:
       - hermes-state:/opt/data
       # Model/provider config — config.yaml is the single source of truth for the LLM backend.

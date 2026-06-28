@@ -1,20 +1,19 @@
-# Hermes LLM backend — config.yaml is the source of truth for model selection.
-# Values are env vars (passed in via docker-compose) that Hermes expands at load time
-# using ${VAR} interpolation. Set them in .env; do not hardcode here.
+# Hermes LLM backend. Hardcoded because this Hermes image does NOT expand ${VAR}
+# in config.yaml, and podman-compose can't reliably render it either. Values here are
+# non-secret (model ids + tailnet hostnames); the OpenRouter API key stays in .env.
 model:
-  default: ${MODEL_NAME}
+  default: hf.co/yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q3_K_M
   provider: custom
-  # hermes shares the tailscale netns, so localhost is NOT the host. MODEL_ENDPOINT is the
-  # full OpenAI-compatible URL (protocol, host, port, /v1) the container can reach
-  # (e.g. http://<homelab-host-tailnet-or-LAN>:11434/v1).
-  base_url: ${MODEL_ENDPOINT}
-  # ollama needs no API key.
+  # Replace with the working short-tailnet-hostname URL, e.g. http://<primary-host>:11434/v1
+  base_url: callisto:11434/v1
   context_length: 64000
 
 fallback_providers:
+  # Tier 1: backup local model (ideally a DIFFERENT host than the primary).
   - provider: custom
-    base_url: ${BACKUP_MODEL_ENDPOINT}
-    model: ${BACKUP_MODEL_NAME}
+    base_url: llama-server/v1 # e.g. http://<backup-host>:11434/v1
+    model: hf.co/yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M
     context_length: 64000
+  # Tier 2: cloud. OPENROUTER_API_KEY is read from the container env (set in .env).
   - provider: openrouter
-    model: ${OPENROUTER_MODEL_NAME}
+    model: anthropic/claude-sonnet-4.6
