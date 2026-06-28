@@ -10,3 +10,11 @@ model:
   base_url: ${MODEL_ENDPOINT}
   # ollama needs no API key.
   context_length: 64000
+
+fallback_providers:
+  - provider: custom
+    base_url: ${BACKUP_MODEL_ENDPOINT}
+    model: ${BACKUP_MODEL_NAME}
+    context_length: 64000
+  - provider: openrouter
+    model: ${OPENROUTER_MODEL_NAME}
