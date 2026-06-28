@@ -1,19 +1,43 @@
-# Hermes LLM backend. Hardcoded because this Hermes image does NOT expand ${VAR}
-# in config.yaml, and podman-compose can't reliably render it either. Values here are
-# non-secret (model ids + tailnet hostnames); the OpenRouter API key stays in .env.
 model:
   default: hf.co/yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q3_K_M
   provider: custom
-  # Replace with the working short-tailnet-hostname URL, e.g. http://<primary-host>:11434/v1
-  base_url: callisto:11434/v1
+  base_url: callisto:11434
   context_length: 64000
-
 fallback_providers:
-  # Tier 1: backup local model (ideally a DIFFERENT host than the primary).
   - provider: custom
-    base_url: llama-server/v1 # e.g. http://<backup-host>:11434/v1
+    base_url: llama-server
     model: hf.co/yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q4_K_M
     context_length: 64000
-  # Tier 2: cloud. OPENROUTER_API_KEY is read from the container env (set in .env).
   - provider: openrouter
     model: anthropic/claude-sonnet-4.6
+display:
+  tool_progress: all
+  interim_assistant_messages: true
+agent:
+  max_turns: 90
+timezone: ''
+plugins:
+  enabled: []
+curator:
+  enabled: true
+  interval_hours: 168
+  min_idle_hours: 2
+  stale_after_days: 30
+  archive_after_days: 90
+  consolidate: false
+  prune_builtins: true
+  backup:
+    enabled: true
+    keep: 5
+auxiliary:
+  curator:
+    provider: auto
+    model: ''
+    base_url: ''
+    api_key: ''
+    timeout: 600
+    extra_body: {}
+_config_version: 30
+onboarding:
+  seen:
+    busy_input_prompt: true
