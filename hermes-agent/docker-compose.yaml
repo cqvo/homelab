@@ -24,12 +24,18 @@ services:
   hermes-agent:
     image: nousresearch/hermes-agent
     container_name: hermes
+    command: gateway run
     network_mode: service:tailscale
     # Access is via the tailnet on :443, proxied to 127.0.0.1:8642 (see serve.json).
-    ports:
-      - "8642:8642"
+    # Telegram runs in polling mode (outbound only) and needs no inbound port.
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
+      - TELEGRAM_HOME_CHANNEL=${TELEGRAM_HOME_CHANNEL}
     volumes:
       - hermes-state:/opt/data
+      # Model/provider config — config.yaml is the single source of truth for the LLM backend.
+      - ./config.yaml:/opt/data/config.yaml
     depends_on:
       tailscale:
         condition: service_healthy
