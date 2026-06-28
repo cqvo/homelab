@@ -1,12 +1,12 @@
-# Hermes LLM backend — single source of truth for model selection (env vars are unsupported).
-# Points at the homelab's local ollama OpenAI-compatible endpoint (see local-llm/ stack).
+# Hermes LLM backend — config.yaml is the source of truth for model selection.
+# Values are env vars (passed in via docker-compose) that Hermes expands at load time
+# using ${VAR} interpolation. Set them in .env; do not hardcode here.
 model:
-  # Must match the model tag actually served by ollama (local-llm/ runs ...:Q3_K_M).
-  default: hf.co/yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q3_K_M
+  default: ${MODEL_NAME}
   provider: custom
-  # hermes shares the tailscale netns, so localhost is NOT the host. Use an address the
-  # container can actually reach: the homelab host's Tailscale name/IP (tailnet-native) or
-  # its LAN IP. Replace OLLAMA_HOST below before deploying.
-  base_url: http://OLLAMA_HOST:11434/v1
+  # hermes shares the tailscale netns, so localhost is NOT the host. MODEL_ENDPOINT is the
+  # full OpenAI-compatible URL (protocol, host, port, /v1) the container can reach
+  # (e.g. http://<homelab-host-tailnet-or-LAN>:11434/v1).
+  base_url: ${MODEL_ENDPOINT}
   # ollama needs no API key.
   context_length: 64000

@@ -32,6 +32,9 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
       - TELEGRAM_HOME_CHANNEL=${TELEGRAM_HOME_CHANNEL}
+      # Consumed by config.yaml via ${VAR} interpolation (custom ollama model backend).
+      - MODEL_NAME=${MODEL_NAME}
+      - MODEL_ENDPOINT=${MODEL_ENDPOINT}
     volumes:
       - hermes-state:/opt/data
       # Model/provider config — config.yaml is the single source of truth for the LLM backend.
