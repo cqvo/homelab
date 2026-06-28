@@ -1,0 +1,56 @@
+services:
+  tailscale:
+    image: tailscale/tailscale:v1.98.4
+    container_name: hermes-tailscale
+    hostname: hermes
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+      # Kernel networking (not userspace) so containers sharing this netns can make
+      # OUTBOUND connections to the tailnet (e.g. the model endpoint), not just serve inbound.
+      - TS_USERSPACE=false
+      # Resolve MagicDNS names (needed if MODEL_ENDPOINT uses a tailnet hostname).
+      - TS_ACCEPT_DNS=true
+      - TS_EXTRA_ARGS=--reset
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./serve.json:/config/serve.json:ro
+    devices:
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "tailscale", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  hermes-agent:
+    image: nousresearch/hermes-agent
+    container_name: hermes
+    command: gateway run
+    network_mode: service:tailscale
+    # Access is via the tailnet on :443, proxied to 127.0.0.1:8642 (see serve.json).
+    # Telegram runs in polling mode (outbound only) and needs no inbound port.
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_ALLOWED_USERS=${TELEGRAM_ALLOWED_USERS}
+      - TELEGRAM_HOME_CHANNEL=${TELEGRAM_HOME_CHANNEL}
+      # Model name/endpoints are hardcoded in config.yaml (Hermes doesn't expand ${VAR}).
+      # Only the OpenRouter key is needed at runtime; Hermes reads it natively.
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+    volumes:
+      - hermes-state:/opt/data
+      # Model/provider config — config.yaml is the single source of truth for the LLM backend.
+      - ./config.yaml:/opt/data/config.yaml
+    depends_on:
+      tailscale:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  hermes-state:
+  tailscale-state:
