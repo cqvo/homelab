@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # ai
 .claude/worktrees/
+
+# ISOs
+*.iso
