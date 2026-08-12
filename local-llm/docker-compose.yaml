@@ -1,9 +1,41 @@
 services:
+  tailscale:
+    image: tailscale/tailscale:v1.98.4
+    container_name: local-llm-tailscale
+    hostname: local-llm
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_SERVE_CONFIG=/config/serve.json
+      # Kernel networking (not userspace) so the ollama container sharing this
+      # netns is reachable on the tailnet at its native :11434, and can also make
+      # outbound tailnet connections.
+      - TS_USERSPACE=false
+      # Resolve MagicDNS names for tailnet hostnames.
+      - TS_ACCEPT_DNS=true
+      - TS_EXTRA_ARGS=--reset
+    volumes:
+      - tailscale-state:/var/lib/tailscale
+      - ./serve.json:/config/serve.json:ro
+    devices:
+      - /dev/net/tun
+    cap_add:
+      - NET_ADMIN
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "tailscale", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
   ollama:
     image: ollama/ollama:0.30.10
     container_name: ollama
-    ports:
-      - "11434:11434"
+    # Share the tailscale netns: reachable on the tailnet as local-llm:11434
+    # (native API) and https://local-llm (HTTPS 443, see serve.json). No host
+    # ports — tailnet-only access.
+    network_mode: service:tailscale
     volumes:
       - ollama:/root/.ollama
     environment:
@@ -15,6 +47,9 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    depends_on:
+      tailscale:
+        condition: service_healthy
     deploy:
       resources:
         reservations:
@@ -30,29 +65,14 @@ services:
       ollama:
         condition: service_healthy
     environment:
-      - OLLAMA_HOST=http://ollama:11434
+      # Ollama lives in the tailscale container's netns; reach it via the
+      # tailscale service name on the compose network.
+      - OLLAMA_HOST=http://tailscale:11434
     entrypoint: ["/bin/sh", "-c"]
     command:
       - "ollama run hf.co/yuxinlu1/gemma-4-12B-agentic-fable5-composer2.5-v2-3.5x-tau2-GGUF:Q3_K_M"
     restart: "no"
 
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:v0.9.6
-    container_name: open-webui
-    ports:
-      - "3000:8080"
-    volumes:
-      - open-webui:/app/backend/data
-    environment:
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - WEBUI_SECRET_KEY=${WEBUI_SECRET_KEY}
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    depends_on:
-      ollama:
-        condition: service_healthy
-    restart: unless-stopped
-
 volumes:
   ollama:
-  open-webui:
+  tailscale-state:
